@@ -57,6 +57,33 @@
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
+
+        .search-mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .search-mode-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #9ca3af;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .search-mode-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .search-mode-tab:hover {
+            color: #6b7280;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
@@ -96,8 +123,26 @@
             </div>
         </div>
 
+        <!-- Search Mode Tabs -->
+        <div class="bg-white rounded-t-2xl shadow-sm border border-gray-100 border-b-0">
+            <div class="p-6 search-mode-tabs">
+                <button class="search-mode-tab active" onclick="setSearchMode('user')">
+                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Search by User
+                </button>
+                <button class="search-mode-tab" onclick="setSearchMode('project')">
+                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Search by Project
+                </button>
+            </div>
+        </div>
+
         <!-- Search Bar -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center border border-gray-100">
+        <div class="bg-white p-6 rounded-b-2xl shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center border border-gray-100 border-t-0">
             <div class="relative w-full">
                 <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,16 +151,16 @@
                 </span>
                 <input 
                     type="text" 
-                    id="usernameInput" 
+                    id="searchInput" 
                     placeholder="Search Scratch username..." 
                     class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
                 >
             </div>
             <button 
-                onclick="fetchProjects()" 
+                onclick="handleSearch()" 
                 class="w-full md:w-auto px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-                Find Projects
+                Search
             </button>
         </div>
 
@@ -124,7 +169,29 @@
             <div class="flex justify-center mb-4">
                 <div class="loader"></div>
             </div>
-            <p class="text-gray-500 italic">Exploring the Scratch database...</p>
+            <p class="text-gray-500 italic">Searching...</p>
+        </div>
+
+        <!-- Results Info -->
+        <div id="resultsInfo" class="text-center mb-4 hidden">
+            <p class="text-gray-600">
+                Showing <span id="resultCount">0</span> results 
+                <span id="filterInfo"></span>
+            </p>
+        </div>
+
+        <!-- Project Search Filter (only shows in project search mode) -->
+        <div id="projectFilterSection" class="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-100 hidden">
+            <div class="flex flex-col md:flex-row gap-3 items-center">
+                <label class="text-sm font-semibold text-gray-700">Filter results:</label>
+                <input 
+                    type="text" 
+                    id="projectFilter" 
+                    placeholder="Filter projects by name..." 
+                    class="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                    oninput="filterProjects()"
+                >
+            </div>
         </div>
 
         <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,11 +202,11 @@
         <div id="emptyState" class="text-center py-20">
             <div class="text-gray-300 mb-4 flex justify-center">
                 <svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0h6a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 0[...]" />
                 </svg>
             </div>
             <h3 class="text-xl font-medium text-gray-400">No projects to show yet</h3>
-            <p class="text-gray-400">Try searching for a user like 'griffpatch'</p>
+            <p class="text-gray-400" id="emptyStateText">Try searching for a user like 'griffpatch'</p>
         </div>
 
         <!-- Download Section -->
@@ -169,24 +236,72 @@
     </div>
 
     <script>
-        const input = document.getElementById('usernameInput');
+        const searchInput = document.getElementById('searchInput');
         const grid = document.getElementById('resultsGrid');
         const statusArea = document.getElementById('statusArea');
         const emptyState = document.getElementById('emptyState');
         const downloadSection = document.getElementById('downloadSection');
+        const projectFilterSection = document.getElementById('projectFilterSection');
+        const projectFilter = document.getElementById('projectFilter');
+        const resultsInfo = document.getElementById('resultsInfo');
+        const resultCount = document.getElementById('resultCount');
+        const filterInfo = document.getElementById('filterInfo');
+        const emptyStateText = document.getElementById('emptyStateText');
+        
         let currentProjects = [];
+        let allUserProjects = [];
+        let searchMode = 'user';
 
         // Allow 'Enter' key to trigger search
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') fetchProjects();
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
         });
+
+        function setSearchMode(mode) {
+            searchMode = mode;
+            
+            // Update tab styling
+            document.querySelectorAll('.search-mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.closest('.search-mode-tab').classList.add('active');
+            
+            // Update placeholder and UI
+            if (mode === 'user') {
+                searchInput.placeholder = 'Search Scratch username...';
+                emptyStateText.textContent = 'Try searching for a user like "griffpatch"';
+                projectFilterSection.classList.add('hidden');
+                searchInput.value = '';
+            } else {
+                searchInput.placeholder = 'Search for a project...';
+                emptyStateText.textContent = 'Try searching for a project name like "apple"';
+                projectFilterSection.classList.add('hidden');
+                searchInput.value = '';
+            }
+            
+            // Reset results
+            grid.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            downloadSection.classList.add('hidden');
+            resultsInfo.classList.add('hidden');
+            currentProjects = [];
+            allUserProjects = [];
+        }
 
         function getSelectedViewOption() {
             return document.querySelector('input[name="viewOption"]:checked').value;
         }
 
-        async function fetchProjects() {
-            const username = input.value.trim();
+        async function handleSearch() {
+            if (searchMode === 'user') {
+                await fetchUserProjects();
+            } else {
+                await searchProjects();
+            }
+        }
+
+        async function fetchUserProjects() {
+            const username = searchInput.value.trim();
             if (!username) {
                 showToast("Please enter a username", "error");
                 return;
@@ -197,10 +312,11 @@
             statusArea.classList.remove('hidden');
             emptyState.classList.add('hidden');
             downloadSection.classList.add('hidden');
+            resultsInfo.classList.add('hidden');
+            projectFilterSection.classList.add('hidden');
             currentProjects = [];
 
             try {
-                // Use CORS proxy to bypass CORS restrictions
                 const corsUrl = `https://cors-anywhere.herokuapp.com/https://api.scratch.mit.edu/users/${username}/projects`;
                 const response = await fetch(corsUrl);
                 
@@ -209,7 +325,6 @@
                 }
 
                 const projects = await response.json();
-
                 statusArea.classList.add('hidden');
 
                 if (projects.length === 0) {
@@ -219,8 +334,12 @@
                 }
 
                 currentProjects = projects;
+                allUserProjects = projects;
                 displayProjects(projects);
                 downloadSection.classList.remove('hidden');
+                resultsInfo.classList.remove('hidden');
+                resultCount.textContent = projects.length;
+                filterInfo.textContent = '';
             } catch (error) {
                 statusArea.classList.add('hidden');
                 emptyState.classList.remove('hidden');
@@ -228,7 +347,91 @@
             }
         }
 
+        async function searchProjects() {
+            const searchTerm = searchInput.value.trim();
+            if (!searchTerm) {
+                showToast("Please enter a project name to search", "error");
+                return;
+            }
+
+            grid.innerHTML = '';
+            statusArea.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            downloadSection.classList.add('hidden');
+            resultsInfo.classList.add('hidden');
+            projectFilterSection.classList.add('hidden');
+            currentProjects = [];
+
+            try {
+                const corsUrl = `https://cors-anywhere.herokuapp.com/https://api.scratch.mit.edu/search/projects?q=${encodeURIComponent(searchTerm)}&limit=40`;
+                const response = await fetch(corsUrl);
+                
+                if (!response.ok) {
+                    throw new Error("Search API error");
+                }
+
+                const data = await response.json();
+                const projects = data.results || [];
+                
+                statusArea.classList.add('hidden');
+
+                if (projects.length === 0) {
+                    showToast("No projects found with that name.", "info");
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                currentProjects = projects;
+                allUserProjects = projects;
+                displayProjects(projects);
+                downloadSection.classList.remove('hidden');
+                resultsInfo.classList.remove('hidden');
+                resultCount.textContent = projects.length;
+                filterInfo.textContent = '';
+                projectFilterSection.classList.remove('hidden');
+                projectFilter.value = '';
+            } catch (error) {
+                statusArea.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                showToast(error.message, "error");
+            }
+        }
+
+        function filterProjects() {
+            const filterTerm = projectFilter.value.trim().toLowerCase();
+            
+            if (!filterTerm) {
+                displayProjects(allUserProjects);
+                resultCount.textContent = allUserProjects.length;
+                filterInfo.textContent = '';
+                return;
+            }
+
+            const filtered = allUserProjects.filter(project => 
+                project.title.toLowerCase().includes(filterTerm)
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                const noResults = document.createElement('div');
+                noResults.className = 'col-span-full text-center py-12';
+                noResults.innerHTML = `
+                    <p class="text-gray-500 text-lg">No projects match "<strong>${filterTerm}</strong>"</p>
+                `;
+                grid.appendChild(noResults);
+                resultCount.textContent = '0';
+                filterInfo.textContent = `(filtered from ${allUserProjects.length})`;
+                return;
+            }
+
+            currentProjects = filtered;
+            displayProjects(filtered);
+            resultCount.textContent = filtered.length;
+            filterInfo.textContent = `(filtered from ${allUserProjects.length})`;
+        }
+
         function displayProjects(projects) {
+            grid.innerHTML = '';
             const viewOption = getSelectedViewOption();
             
             projects.forEach(project => {
@@ -294,9 +497,11 @@
                 return;
             }
 
-            const username = input.value.trim();
+            const searchTerm = searchInput.value.trim();
             const viewOption = getSelectedViewOption();
-            let textContent = `Scratch Projects for: ${username}\n`;
+            let textContent = searchMode === 'user' 
+                ? `Scratch Projects for: ${searchTerm}\n`
+                : `Scratch Projects matching: ${searchTerm}\n`;
             textContent += `View Option: ${viewOption === 'scratch-remix' ? 'Scratch Remix' : 'Scratch (Original)'}\n`;
             textContent += `Generated: ${new Date().toLocaleString()}\n`;
             textContent += `Total Projects: ${currentProjects.length}\n`;
@@ -313,7 +518,7 @@
                 }
             });
 
-            downloadFile(textContent, `scratch_projects_${username}.txt`, 'text/plain');
+            downloadFile(textContent, `scratch_projects_${searchTerm}.txt`, 'text/plain');
         }
 
         function downloadAsPhp() {
@@ -322,10 +527,12 @@
                 return;
             }
 
-            const username = input.value.trim();
+            const searchTerm = searchInput.value.trim();
             const viewOption = getSelectedViewOption();
             let phpContent = `<?php\n\n`;
-            phpContent += `// Scratch Projects for: ${username}\n`;
+            phpContent += searchMode === 'user'
+                ? `// Scratch Projects for: ${searchTerm}\n`
+                : `// Scratch Projects matching: ${searchTerm}\n`;
             phpContent += `// View Option: ${viewOption === 'scratch-remix' ? 'Scratch Remix' : 'Scratch (Original)'}\n`;
             phpContent += `// Generated: ${new Date().toLocaleString()}\n\n`;
             phpContent += `$projects = array(\n`;
@@ -346,10 +553,10 @@
             phpContent += `);\n\n`;
             phpContent += `// Total projects: ${currentProjects.length}\n`;
             phpContent += `// View option: ${viewOption === 'scratch-remix' ? 'Scratch Remix' : 'Scratch (Original)'}\n`;
-            phpContent += `echo 'Scratch projects for ${username}: ' . count($projects);\n`;
+            phpContent += `echo 'Scratch projects: ' . count($projects);\n`;
             phpContent += `\n?>`;
 
-            downloadFile(phpContent, `scratch_projects_${username}.php`, 'text/plain');
+            downloadFile(phpContent, `scratch_projects_${searchTerm}.php`, 'text/plain');
         }
 
         function downloadFile(content, filename, type) {
@@ -374,12 +581,12 @@
             
             document.body.appendChild(toast);
             
-            if(type === 'error') input.classList.add('error-shake', 'border-red-300');
+            if(type === 'error') searchInput.classList.add('error-shake', 'border-red-300');
             
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translate(-50%, 20px)';
-                input.classList.remove('error-shake', 'border-red-300');
+                searchInput.classList.remove('error-shake', 'border-red-300');
                 setTimeout(() => toast.remove(), 500);
             }, 3000);
         }
