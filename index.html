@@ -70,6 +70,32 @@
             <p class="text-gray-600">Enter a username to explore their creative portfolio</p>
         </header>
 
+        <!-- View Option Selector -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
+            <label class="block text-sm font-semibold text-gray-700 mb-3">View Projects On:</label>
+            <div class="flex flex-col md:flex-row gap-4">
+                <label class="flex items-center cursor-pointer">
+                    <input 
+                        type="radio" 
+                        name="viewOption" 
+                        value="scratch" 
+                        checked 
+                        class="w-4 h-4 text-blue-500 bg-gray-100 border-gray-300"
+                    >
+                    <span class="ml-3 text-gray-700 font-medium">Scratch (Original)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input 
+                        type="radio" 
+                        name="viewOption" 
+                        value="scratch-remix" 
+                        class="w-4 h-4 text-purple-500 bg-gray-100 border-gray-300"
+                    >
+                    <span class="ml-3 text-gray-700 font-medium">Scratch Remix</span>
+                </label>
+            </div>
+        </div>
+
         <!-- Search Bar -->
         <div class="bg-white p-6 rounded-2xl shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center border border-gray-100">
             <div class="relative w-full">
@@ -109,7 +135,7 @@
         <div id="emptyState" class="text-center py-20">
             <div class="text-gray-300 mb-4 flex justify-center">
                 <svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 0[...]
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0h6a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2V9z" />
                 </svg>
             </div>
             <h3 class="text-xl font-medium text-gray-400">No projects to show yet</h3>
@@ -155,6 +181,10 @@
             if (e.key === 'Enter') fetchProjects();
         });
 
+        function getSelectedViewOption() {
+            return document.querySelector('input[name="viewOption"]:checked').value;
+        }
+
         async function fetchProjects() {
             const username = input.value.trim();
             if (!username) {
@@ -199,9 +229,25 @@
         }
 
         function displayProjects(projects) {
+            const viewOption = getSelectedViewOption();
+            
             projects.forEach(project => {
                 const card = document.createElement('div');
                 card.className = 'project-card bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col';
+                
+                let viewLink = '';
+                let viewButtonText = '';
+                let buttonColor = '';
+
+                if (viewOption === 'scratch-remix') {
+                    viewLink = `https://bobth3bestking.github.io/scratch-gui/#${project.id}`;
+                    viewButtonText = 'View on Scratch Remix';
+                    buttonColor = 'bg-purple-600 hover:bg-purple-700';
+                } else {
+                    viewLink = `https://scratch.mit.edu/projects/${project.id}`;
+                    viewButtonText = 'View on Scratch';
+                    buttonColor = 'bg-gray-800 hover:bg-black';
+                }
                 
                 card.innerHTML = `
                     <div class="p-6">
@@ -217,11 +263,11 @@
                             Created on: ${new Date(project.history.created).toLocaleDateString()}
                         </p>
                         <a 
-                            href="https://scratch.mit.edu/projects/${project.id}" 
+                            href="${viewLink}" 
                             target="_blank"
-                            class="mt-auto inline-flex items-center justify-center w-full py-3 bg-gray-800 hover:bg-black text-white text-sm font-semibold rounded-xl transition-all gap-2"
+                            class="mt-auto inline-flex items-center justify-center w-full py-3 ${buttonColor} text-white text-sm font-semibold rounded-xl transition-all gap-2"
                         >
-                            View on Scratch
+                            ${viewButtonText}
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
@@ -232,6 +278,16 @@
             });
         }
 
+        // Re-render when view option changes
+        document.querySelectorAll('input[name="viewOption"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (currentProjects.length > 0) {
+                    grid.innerHTML = '';
+                    displayProjects(currentProjects);
+                }
+            });
+        });
+
         function downloadAsText() {
             if (currentProjects.length === 0) {
                 showToast("No projects to download", "error");
@@ -239,7 +295,9 @@
             }
 
             const username = input.value.trim();
+            const viewOption = getSelectedViewOption();
             let textContent = `Scratch Projects for: ${username}\n`;
+            textContent += `View Option: ${viewOption === 'scratch-remix' ? 'Scratch Remix' : 'Scratch (Original)'}\n`;
             textContent += `Generated: ${new Date().toLocaleString()}\n`;
             textContent += `Total Projects: ${currentProjects.length}\n`;
             textContent += `${'='.repeat(60)}\n\n`;
@@ -248,7 +306,11 @@
                 textContent += `${index + 1}. ${project.title}\n`;
                 textContent += `   ID: ${project.id}\n`;
                 textContent += `   Created: ${new Date(project.history.created).toLocaleDateString()}\n`;
-                textContent += `   Link: https://scratch.mit.edu/projects/${project.id}\n\n`;
+                if (viewOption === 'scratch-remix') {
+                    textContent += `   Link: https://bobth3bestking.github.io/scratch-gui/#${project.id}\n\n`;
+                } else {
+                    textContent += `   Link: https://scratch.mit.edu/projects/${project.id}\n\n`;
+                }
             });
 
             downloadFile(textContent, `scratch_projects_${username}.txt`, 'text/plain');
@@ -261,22 +323,29 @@
             }
 
             const username = input.value.trim();
+            const viewOption = getSelectedViewOption();
             let phpContent = `<?php\n\n`;
             phpContent += `// Scratch Projects for: ${username}\n`;
+            phpContent += `// View Option: ${viewOption === 'scratch-remix' ? 'Scratch Remix' : 'Scratch (Original)'}\n`;
             phpContent += `// Generated: ${new Date().toLocaleString()}\n\n`;
             phpContent += `$projects = array(\n`;
 
             currentProjects.forEach((project) => {
+                const link = viewOption === 'scratch-remix' 
+                    ? `https://bobth3bestking.github.io/scratch-gui/#${project.id}`
+                    : `https://scratch.mit.edu/projects/${project.id}`;
+                
                 phpContent += `    array(\n`;
                 phpContent += `        'title' => '${project.title.replace(/'/g, "\\'")}',' \n`;
                 phpContent += `        'id' => ${project.id},\n`;
                 phpContent += `        'created' => '${new Date(project.history.created).toLocaleDateString()}',\n`;
-                phpContent += `        'link' => 'https://scratch.mit.edu/projects/${project.id}'\n`;
+                phpContent += `        'link' => '${link}'\n`;
                 phpContent += `    ),\n`;
             });
 
             phpContent += `);\n\n`;
             phpContent += `// Total projects: ${currentProjects.length}\n`;
+            phpContent += `// View option: ${viewOption === 'scratch-remix' ? 'Scratch Remix' : 'Scratch (Original)'}\n`;
             phpContent += `echo 'Scratch projects for ${username}: ' . count($projects);\n`;
             phpContent += `\n?>`;
 
