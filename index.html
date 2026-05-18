@@ -115,6 +115,31 @@
             <h3 class="text-xl font-medium text-gray-400">No projects to show yet</h3>
             <p class="text-gray-400">Try searching for a user like 'griffpatch'</p>
         </div>
+
+        <!-- Download Section -->
+        <div id="downloadSection" class="mt-12 pt-8 border-t border-gray-200 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Export Results</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <button 
+                    onclick="downloadAsText()" 
+                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download as .txt
+                </button>
+                <button 
+                    onclick="downloadAsPhp()" 
+                    class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download as .php
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -122,6 +147,8 @@
         const grid = document.getElementById('resultsGrid');
         const statusArea = document.getElementById('statusArea');
         const emptyState = document.getElementById('emptyState');
+        const downloadSection = document.getElementById('downloadSection');
+        let currentProjects = [];
 
         // Allow 'Enter' key to trigger search
         input.addEventListener('keypress', (e) => {
@@ -139,6 +166,8 @@
             grid.innerHTML = '';
             statusArea.classList.remove('hidden');
             emptyState.classList.add('hidden');
+            downloadSection.classList.add('hidden');
+            currentProjects = [];
 
             try {
                 // Use CORS proxy to bypass CORS restrictions
@@ -159,7 +188,9 @@
                     return;
                 }
 
+                currentProjects = projects;
                 displayProjects(projects);
+                downloadSection.classList.remove('hidden');
             } catch (error) {
                 statusArea.classList.add('hidden');
                 emptyState.classList.remove('hidden');
@@ -201,10 +232,74 @@
             });
         }
 
+        function downloadAsText() {
+            if (currentProjects.length === 0) {
+                showToast("No projects to download", "error");
+                return;
+            }
+
+            const username = input.value.trim();
+            let textContent = `Scratch Projects for: ${username}\n`;
+            textContent += `Generated: ${new Date().toLocaleString()}\n`;
+            textContent += `Total Projects: ${currentProjects.length}\n`;
+            textContent += `${'='.repeat(60)}\n\n`;
+
+            currentProjects.forEach((project, index) => {
+                textContent += `${index + 1}. ${project.title}\n`;
+                textContent += `   ID: ${project.id}\n`;
+                textContent += `   Created: ${new Date(project.history.created).toLocaleDateString()}\n`;
+                textContent += `   Link: https://scratch.mit.edu/projects/${project.id}\n\n`;
+            });
+
+            downloadFile(textContent, `scratch_projects_${username}.txt`, 'text/plain');
+        }
+
+        function downloadAsPhp() {
+            if (currentProjects.length === 0) {
+                showToast("No projects to download", "error");
+                return;
+            }
+
+            const username = input.value.trim();
+            let phpContent = `<?php\n\n`;
+            phpContent += `// Scratch Projects for: ${username}\n`;
+            phpContent += `// Generated: ${new Date().toLocaleString()}\n\n`;
+            phpContent += `$projects = array(\n`;
+
+            currentProjects.forEach((project) => {
+                phpContent += `    array(\n`;
+                phpContent += `        'title' => '${project.title.replace(/'/g, "\\'")}',' \n`;
+                phpContent += `        'id' => ${project.id},\n`;
+                phpContent += `        'created' => '${new Date(project.history.created).toLocaleDateString()}',\n`;
+                phpContent += `        'link' => 'https://scratch.mit.edu/projects/${project.id}'\n`;
+                phpContent += `    ),\n`;
+            });
+
+            phpContent += `);\n\n`;
+            phpContent += `// Total projects: ${currentProjects.length}\n`;
+            phpContent += `echo 'Scratch projects for ${username}: ' . count($projects);\n`;
+            phpContent += `\n?>`;
+
+            downloadFile(phpContent, `scratch_projects_${username}.php`, 'text/plain');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`Downloaded: ${filename}`, 'success');
+        }
+
         function showToast(message, type) {
             const toast = document.createElement('div');
             toast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl text-white font-medium shadow-lg z-50 transition-all transform translate-y-0 ${
-                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'
             }`;
             toast.innerText = message;
             
