@@ -371,7 +371,7 @@
                 }
 
                 const data = await response.json();
-                const projects = data.results || [];
+                const projects = data.results || data || [];
                 
                 statusArea.classList.add('hidden');
 
