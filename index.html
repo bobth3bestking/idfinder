@@ -443,7 +443,7 @@
                 let buttonColor = '';
 
                 if (viewOption === 'scratch-remix') {
-                    viewLink = `https://bobth3bestking.github.io/scratch-gui/#${project.id}`;
+                    viewLink = `https://bobth3bestking.github.io/scratch-gui1/#${project.id}`;
                     viewButtonText = 'View on Scratch Remix';
                     buttonColor = 'bg-purple-600 hover:bg-purple-700';
                 } else {
@@ -512,7 +512,7 @@
                 textContent += `   ID: ${project.id}\n`;
                 textContent += `   Created: ${new Date(project.history.created).toLocaleDateString()}\n`;
                 if (viewOption === 'scratch-remix') {
-                    textContent += `   Link: https://bobth3bestking.github.io/scratch-gui/#${project.id}\n\n`;
+                    textContent += `   Link: https://bobth3bestking.github.io/scratch-gui1/#${project.id}\n\n`;
                 } else {
                     textContent += `   Link: https://scratch.mit.edu/projects/${project.id}\n\n`;
                 }
@@ -539,7 +539,7 @@
 
             currentProjects.forEach((project) => {
                 const link = viewOption === 'scratch-remix' 
-                    ? `https://bobth3bestking.github.io/scratch-gui/#${project.id}`
+                    ? `https://bobth3bestking.github.io/scratch-gui1/#${project.id}`
                     : `https://scratch.mit.edu/projects/${project.id}`;
                 
                 phpContent += `    array(\n`;
